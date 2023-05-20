@@ -1,1 +1,1 @@
-sed -i "/.*apply_old_config.*/d" $(NRF52_SDK_ROOT)/integration/nrfx/nrfx_glue.h
+sed -i "/.*apply_old_config.*/d" ${NRF52_SDK_ROOT}/integration/nrfx/nrfx_glue.h

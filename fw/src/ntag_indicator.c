@@ -68,7 +68,13 @@ static void ntag_indicator_draw_ntag(ntag_t *ntag, uint8_t offset) {
         u8g2_DrawUTF8(&u8g2, offset, 48, amd->game_series);
         u8g2_DrawUTF8(&u8g2, offset, 62, amd->notes);
     } else {
-        u8g2_DrawUTF8(&u8g2, offset, 36, "空标签");
+        if (head > 0 && tail > 0) {
+            sprintf(buff, "[%08x:%08x]", head, tail);
+            u8g2_DrawUTF8(&u8g2, offset, 36, "Amiibo");
+            u8g2_DrawUTF8(&u8g2, offset, 48, buff);
+        } else {
+            u8g2_DrawUTF8(&u8g2, offset, 36, "空标签");
+        }
     }
 }
 

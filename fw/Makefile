@@ -1,5 +1,5 @@
 PROJECT_NAME     := pixljsv1
-TARGETS          := nrf52832_xxaa
+TARGETS          := pixljs
 OUTPUT_DIRECTORY := _build
 
 SDK_ROOT := $(NRF52_SDK_ROOT)
@@ -7,7 +7,7 @@ PROJ_DIR := ./src/
 COMP_DIR := ./components
 U8G2_ROOT := ./components/u8g2/csrc
 
-$(OUTPUT_DIRECTORY)/nrf52832_xxaa.out: \
+$(OUTPUT_DIRECTORY)/pixljs.out: \
   LINKER_SCRIPT  := ld/application.ld
 
 # Source files common to all targets
@@ -445,10 +445,10 @@ LDFLAGS += -Wl,--gc-sections
 # use newlib in nano version
 LDFLAGS += --specs=nano.specs
 
-nrf52832_xxaa: CFLAGS += -D__HEAP_SIZE=8192
-nrf52832_xxaa: CFLAGS += -D__STACK_SIZE=8192
-nrf52832_xxaa: ASMFLAGS += -D__HEAP_SIZE=8192
-nrf52832_xxaa: ASMFLAGS += -D__STACK_SIZE=8192
+pixljs: CFLAGS += -D__HEAP_SIZE=8192
+pixljs: CFLAGS += -D__STACK_SIZE=8192
+pixljs: ASMFLAGS += -D__HEAP_SIZE=8192
+pixljs: ASMFLAGS += -D__STACK_SIZE=8192
 
 # Add standard libraries at the very end of the linker input, after all objects
 # that may need symbols provided by these libraries.
@@ -458,13 +458,13 @@ LIB_FILES += -lc -lnosys -lm
 .PHONY: default help
 
 # Default target - first one defined
-default: nrf52832_xxaa
-all: nrf52832_xxaa
+default: pixljs
+all: pixljs
 
 # Print all targets that can be built
 help:
 	@echo following targets are available:
-	@echo		nrf52832_xxaa
+	@echo		pixljs
 	@echo		flash_softdevice
 	@echo		sdk_config - starting external tool for editing sdk_config.h
 	@echo		flash      - flashing binary
