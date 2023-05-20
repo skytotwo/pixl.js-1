@@ -2,11 +2,10 @@ PROJECT_NAME     := pixljsv1
 TARGETS          := nrf52832_xxaa
 OUTPUT_DIRECTORY := _build
 
-SDK_ROOT := ../../nRF5_SDK_17.1.0_ddde560
+SDK_ROOT := $(NRF52_SDK_ROOT)
 PROJ_DIR := ./src/
 COMP_DIR := ./components
 U8G2_ROOT := ./components/u8g2/csrc
-GNU_INSTALL_ROOT := /usr/bin/
 
 $(OUTPUT_DIRECTORY)/nrf52832_xxaa.out: \
   LINKER_SCRIPT  := ld/application.ld
