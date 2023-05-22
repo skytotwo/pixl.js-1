@@ -13,18 +13,17 @@
 
 #define NTAG_NUM 10
 #define ECC_SIZE 32
+#define NTAG_DATA_SIZE 540
 
 typedef enum
 {
 	NTAG_213,
 	NTAG_215,
-	NTAG_218
+	NTAG_216
 } ntag_type_t;
 
 typedef struct  {
 	uint8_t index;
-	ntag_type_t type; //
-	uint16_t size; //NTAG 215: 540 bytes
 	uint8_t data[540];
 	uint8_t ecc[ECC_SIZE];
 } ntag_t;

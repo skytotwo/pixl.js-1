@@ -34,13 +34,13 @@ typedef struct {
     ntag_t ntag;
     uint8_t dirty;
     uint8_t busy;
+    ntag_update_cb_t update_cb;
+    void *cb_context;
 } ntag_emu_t;
 
 ntag_emu_t ntag_emu = { 0 };
 
-static const uint8_t NTAG215_Version[8] = {0x00, 0x04, 0x04, 0x02, 0x01, 0x00,
-                                           0x11,
-                                           0x03};
+static const uint8_t NTAG215_Version[8] = {0x00, 0x04, 0x04, 0x02, 0x01, 0x00, 0x11, 0x03};
 // NTAG215_Version[7] mean:
 // 0x0F ntag213
 // 0x11 ntag215
@@ -85,11 +85,10 @@ static const uint8_t N2E_SELECT_BANK[1] = { 0x0a };
 
 static void update_ntag_handler(void *p_event_data, uint16_t event_size);
 
-static void nfc_received_process(const uint8_t *p_data, size_t data_length,
-                                 uint8_t *plain) {
+static void nfc_received_process(const uint8_t *p_data, size_t data_length, uint8_t *plain) {
     // NRF_LOG_INFO("NFC COMMAND %d", p_data[0]);
 
-	nrf_pwr_mgmt_feed();
+    nrf_pwr_mgmt_feed();
 
     uint8_t command = p_data[0];
     uint8_t block_num = p_data[1];
@@ -112,7 +111,7 @@ static void nfc_received_process(const uint8_t *p_data, size_t data_length,
     case NFC_CMD_WRITE:
         NRF_LOG_INFO("NFC Write Block %d", block_num);
         if (data_length == 6) {
-			ntag_emu.dirty = true;
+            ntag_emu.dirty = true;
             if (block_num == 133 || block_num == 134) {
 
             } else if (block_num == 2) {
@@ -143,24 +142,23 @@ static void nfc_received_process(const uint8_t *p_data, size_t data_length,
         hal_nfc_send(&plain[block_num * 4], (p_data[2] - block_num + 1) * 4);
         break;
     case NFC_CMD_PWD_AUTH:
-        NRF_LOG_INFO("NFC Password: %x %x %x %x", p_data[1], p_data[2], p_data[3],
-                     p_data[4]);
+        NRF_LOG_INFO("NFC Password: %x %x %x %x", p_data[1], p_data[2], p_data[3], p_data[4]);
         hal_nfc_send(NTAG215_PwdOK, 2);
         break;
     case N2_CMD_GET_INFO:
-        N2E_INFO[0] = ntag_indicator_current();
+        N2E_INFO[0] = 0;
         hal_nfc_send(N2E_INFO, 4);
         break;
     case N2_CMD_GET_ID:
         hal_nfc_send(N2E_ID, 16);
         break;
     case N2_CMD_SELECT_BANK:
-        //uint8_t banknum = block_num;
+        // uint8_t banknum = block_num;
         hal_nfc_send(N2E_SELECT_BANK, 1);
         break;
     case N2_CMD_FAST_WRITE:
         NRF_LOG_INFO("N2E Fast Read slot %d:", p_data[2]);
-		ntag_emu.dirty = true;
+        ntag_emu.dirty = true;
         uint8_t datasize = p_data[3];
         for (int i = 0; i < datasize; i++) {
             plain[block_num * 4 + i] = p_data[i + 4];
@@ -188,8 +186,12 @@ static void nfc_callback(void *p_context, hal_nfc_event_t event, const uint8_t *
     case HAL_NFC_EVENT_FIELD_OFF:
         bsp_board_led_off(BSP_BOARD_LED_0);
 		if (ntag_emu.dirty) {
-			app_sched_event_put(NULL, 0, update_ntag_handler);
-		}
+			ntag_event_type_t type = NTAG_EVENT_TYPE_WRITTEN;
+            app_sched_event_put(&type, sizeof(ntag_event_type_t), update_ntag_handler);
+		} else {
+            ntag_event_type_t type = NTAG_EVENT_TYPE_READ;
+            app_sched_event_put(&type, sizeof(ntag_event_type_t), update_ntag_handler);
+        }
         break;
     case HAL_NFC_EVENT_COMMAND:
         // NRF_LOG_INFO("NFC Command Received: %x", p_data[0]);
@@ -204,20 +206,23 @@ static void nfc_callback(void *p_context, hal_nfc_event_t event, const uint8_t *
     }
 }
 
-
+void ntag_emu_set_update_cb(ntag_update_cb_t cb, void *context) {
+    ntag_emu.update_cb = cb;
+    ntag_emu.cb_context = context;
+}
 
 ntag_t *ntag_emu_get_current_tag() { return &(ntag_emu.ntag); }
 
 static void update_ntag_handler(void *p_event_data, uint16_t event_size) {
     ntag_emu.busy = true;
 
+    ntag_event_type_t type = *((ntag_event_type_t *)p_event_data);
+
     ntag_emu_set_tag(&(ntag_emu.ntag));
 
-    uint8_t index = ntag_indicator_current();
-    NRF_LOG_DEBUG("Pesist ntag begin: %d", index);
-    ret_code_t err_code = ntag_store_write_with_gc(index, &(ntag_emu.ntag));
-    APP_ERROR_CHECK(err_code);
-    NRF_LOG_DEBUG("Pesist ntag end: %d", index);
+    if (ntag_emu.update_cb) {
+        ntag_emu.update_cb(type, ntag_emu.cb_context, &(ntag_emu.ntag));
+    }
     ntag_indicator_update();
 
     ntag_emu.dirty = false;

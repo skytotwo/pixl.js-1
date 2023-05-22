@@ -245,6 +245,20 @@ void bsp_evt_execute(void * p_event_data, uint16_t event_size) {
 
 }
 
+static void ntag_update_cb(ntag_event_type_t type, void *context, ntag_t *p_ntag) {
+	ret_code_t err_code = NRF_SUCCESS;
+    //if (type == NTAG_EVENT_TYPE_WRITTEN) {
+        
+		uint8_t index = ntag_indicator_current();
+		NRF_LOG_DEBUG("Pesist ntag begin: %d", index);
+		err_code = ntag_store_write_with_gc(index, p_ntag);
+		APP_ERROR_CHECK(err_code);
+		NRF_LOG_DEBUG("Pesist ntag end: %d", index);
+    //} else if (type == NTAG_EVENT_TYPE_READ) {
+    //    bsp_evt_handler(BSP_EVENT_KEY_1);
+    //}
+}
+
 void bsp_evt_handler(bsp_event_t evt) {
 	app_sched_event_put(&evt, sizeof(evt), bsp_evt_execute);
 }
@@ -382,7 +396,7 @@ int main(void) {
 	APP_ERROR_CHECK(err_code);
 
 	ntag_indicator_update();
-
+	ntag_emu_set_update_cb(ntag_update_cb, NULL);
 
 	NRF_LOG_FLUSH();
 

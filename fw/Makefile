@@ -161,7 +161,6 @@ SRC_FILES += \
 	$(SDK_ROOT)/external/mbedtls/library/x509write_csr.c \
 	$(SDK_ROOT)/external/mbedtls/library/xtea.c \
   $(PROJ_DIR)/main.c \
-  $(PROJ_DIR)/ntag_emu.c \
   $(PROJ_DIR)/ntag_emu_v2.c \
   $(PROJ_DIR)/ntag_store.c \
   $(PROJ_DIR)/ntag_indicator.c \

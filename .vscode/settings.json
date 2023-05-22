@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "ntag_emu.h": "c",
+        "ntag_indicator.h": "c"
+    }
+}
