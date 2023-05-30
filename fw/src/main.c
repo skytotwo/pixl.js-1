@@ -104,7 +104,36 @@
 #define APP_SHUTDOWN_HANDLER_PRIORITY 1
 
 //#define SPI_FLASH
+APP_TIMER_DEF(m_amiibo_gen_delay_timer);
 
+static void ntag_generate_cb() {
+    ret_code_t err_code;
+	ntag_t ntag_new;
+	ntag_t *ntag_current = ntag_emu_get_current_tag();
+	memcpy(&ntag_new, ntag_current, sizeof(ntag_t));
+
+	uint32_t head = to_little_endian_int32(&ntag_current->data[84]);
+	uint32_t tail = to_little_endian_int32(&ntag_current->data[88]);
+
+	const amiibo_data_t *amd = find_amiibo_data(head, tail);
+	if(amd == NULL){
+		return;
+	}
+
+	NRF_LOG_INFO("reset uuid begin");
+
+	err_code = ntag_store_uuid_rand(&ntag_new);
+	APP_ERROR_CHECK(err_code);
+
+
+	//sign new
+	err_code = amiibo_helper_sign_new_ntag(ntag_current, &ntag_new);
+	if (err_code == NRF_SUCCESS) {
+		//ntag_emu_set_uuid_only(&ntag_new);
+		ntag_emu_set_tag(&ntag_new);
+		NRF_LOG_INFO("reset uuid success");
+	}
+}
 
 /**
  *@brief Function for initializing logging.
@@ -153,37 +182,35 @@ void bsp_evt_execute(void * p_event_data, uint16_t event_size) {
 		//regenerate
 
 		ret_code_t err_code;
-	ntag_t ntag_new;
-	ntag_t *ntag_current = ntag_emu_get_current_tag();
-	memcpy(&ntag_new, ntag_current, sizeof(ntag_t));
+		ntag_t ntag_new;
+		ntag_t *ntag_current = ntag_emu_get_current_tag();
+		memcpy(&ntag_new, ntag_current, sizeof(ntag_t));
 
-	uint32_t head = to_little_endian_int32(&ntag_current->data[84]);
-	uint32_t tail = to_little_endian_int32(&ntag_current->data[88]);
+		uint32_t head = to_little_endian_int32(&ntag_current->data[84]);
+		uint32_t tail = to_little_endian_int32(&ntag_current->data[88]);
 
-	const amiibo_data_t *amd = find_amiibo_data(head, tail);
-	if(amd == NULL){
-		return;
-	}
+		const amiibo_data_t *amd = find_amiibo_data(head, tail);
+		if(amd == NULL){
+			return;
+		}
 
-    NRF_LOG_INFO("reset uuid begin");
+		NRF_LOG_INFO("reset uuid begin");
 
-	err_code = ntag_store_uuid_rand(&ntag_new);
-    APP_ERROR_CHECK(err_code);
-
-
-    //sign new
-    err_code = amiibo_helper_sign_new_ntag(ntag_current, &ntag_new);
-	if (err_code == NRF_SUCCESS) {
-		//ntag_emu_set_uuid_only(&ntag_new);
-		ntag_emu_set_tag(&ntag_new);
-		ntag_indicator_update();
-
-		NRF_LOG_INFO("reset uuid success");
-	}
+		err_code = ntag_store_uuid_rand(&ntag_new);
+		APP_ERROR_CHECK(err_code);
 
 
-		break;
-	}
+		//sign new
+		err_code = amiibo_helper_sign_new_ntag(ntag_current, &ntag_new);
+		if (err_code == NRF_SUCCESS) {
+			//ntag_emu_set_uuid_only(&ntag_new);
+			ntag_emu_set_tag(&ntag_new);
+			ntag_indicator_update();
+
+			NRF_LOG_INFO("reset uuid success");
+		}
+			break;
+		}
 
 	case BSP_EVENT_KEY_2: {
 
@@ -247,16 +274,18 @@ void bsp_evt_execute(void * p_event_data, uint16_t event_size) {
 
 static void ntag_update_cb(ntag_event_type_t type, void *context, ntag_t *p_ntag) {
 	ret_code_t err_code = NRF_SUCCESS;
-    //if (type == NTAG_EVENT_TYPE_WRITTEN) {
-        
-		uint8_t index = ntag_indicator_current();
-		NRF_LOG_DEBUG("Pesist ntag begin: %d", index);
-		err_code = ntag_store_write_with_gc(index, p_ntag);
-		APP_ERROR_CHECK(err_code);
-		NRF_LOG_DEBUG("Pesist ntag end: %d", index);
-    //} else if (type == NTAG_EVENT_TYPE_READ) {
-    //    bsp_evt_handler(BSP_EVENT_KEY_1);
-    //}
+
+	uint8_t index = ntag_indicator_current();
+	NRF_LOG_DEBUG("Pesist ntag begin: %d", index);
+	err_code = ntag_store_write_with_gc(index, p_ntag);
+	APP_ERROR_CHECK(err_code);
+	NRF_LOG_DEBUG("Pesist ntag end: %d", index);
+	
+    if (type == NTAG_EVENT_TYPE_WRITTEN) {  
+    } else if (type == NTAG_EVENT_TYPE_READ) {
+		app_timer_stop(m_amiibo_gen_delay_timer);
+		app_timer_start(m_amiibo_gen_delay_timer, APP_TIMER_TICKS(1000), NULL);
+    }
 }
 
 void bsp_evt_handler(bsp_event_t evt) {
@@ -394,6 +423,8 @@ int main(void) {
 	APP_ERROR_CHECK(err_code);
 	err_code = ntag_emu_init(&ntag);
 	APP_ERROR_CHECK(err_code);
+	err_code = app_timer_create(&m_amiibo_gen_delay_timer, APP_TIMER_MODE_SINGLE_SHOT, ntag_generate_cb);
+    APP_ERROR_CHECK(err_code);
 
 	ntag_indicator_update();
 	ntag_emu_set_update_cb(ntag_update_cb, NULL);
