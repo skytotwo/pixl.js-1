@@ -1,0 +1,92 @@
+name: pixl.js-fw
+
+on:
+  push:
+    branches: [ "taiwan"]
+    tags:  ["*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    container: solosky/nrf52-sdk:latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'true'
+
+    - name: Change Owner of Container Working Directory
+      run: chown root:root .
+
+    - name: build bootloader
+      run: cd fw/bootloader && make RELEASE=1
+    - name: build firmware
+      run: cd fw && make RELEASE=1
+    - name: build ota
+      run: cd fw && make ota RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER
+    - name: build all
+      run: cd fw && make full RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER
+    - name: upload bootloader
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/bootloader/_build/bootloader.hex
+    - name: upload firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/_build/pixljs.hex
+    - name: upload all
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/_build/pixljs_all.hex
+    - name: upload ota 
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/_build/pixjs_ota_v${{github.run_number}}.zip
+    - name: upload fw update script 
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/scripts/fw_update.bat
+    - name: upload fw readme file 
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_spiffs
+        path: fw/docs/fw_readme.txt
+    
+    - name: build firmware with lfs
+      run: cd fw && make clean && make RELEASE=1 LFS_ENABLE=1
+    - name: build ota with lfs
+      run: cd fw && make ota RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER
+    - name: build all with lfs
+      run: cd fw && make full RELEASE=1 APP_VERSION=$GITHUB_RUN_NUMBER
+    
+    - name: upload firmware with lfs
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_lfs
+        path: fw/_build/pixljs.hex
+    - name: upload all with lfs
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_lfs
+        path: fw/_build/pixljs_all.hex
+    - name: upload ota with lfs
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_lfs
+        path: fw/_build/pixjs_ota_v${{github.run_number}}.zip
+    - name: upload fw update script 
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_lfs
+        path: fw/scripts/fw_update.bat
+    - name: upload fw readme file 
+      uses: actions/upload-artifact@v3
+      with:
+        name: pixljs_firmware_lfs
+        path: fw/docs/fw_readme.txt
