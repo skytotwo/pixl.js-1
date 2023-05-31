@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "mui_mlib.h"
-#include "m-dict.h"
+// #include "m-dict.h"
 
 
 #include "mini_app_defines.h"
