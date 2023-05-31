@@ -207,14 +207,14 @@ void amiibo_scene_file_browser_menu_on_enter(void *user_data) {
 
     mui_list_view_add_item(app->p_list_view, 0xe1c7, string_get_cstr(app->current_file), FILE_BROWSER_MENU_FILE_NAME);
 
-    mui_list_view_add_item(app->p_list_view, 0xe1c8, "新建文件夹..", (void *)FILE_BROWSER_MENU_CREATE_FOLDER);
-    mui_list_view_add_item(app->p_list_view, 0xe1c8, "新建标签..", (void *)FILE_BROWSER_MENU_CREATE_AMIIBO);
+    mui_list_view_add_item(app->p_list_view, 0xe1c8, "新建文件夾..", (void *)FILE_BROWSER_MENU_CREATE_FOLDER);
+    mui_list_view_add_item(app->p_list_view, 0xe1c8, "新建標簽..", (void *)FILE_BROWSER_MENU_CREATE_AMIIBO);
     if (string_cmp_str(app->current_file, "..") != 0) {
         mui_list_view_add_item(app->p_list_view, 0xe1c9, "重命名..", (void *)FILE_BROWSER_MENU_RENAME_FOLDER);
-        mui_list_view_add_item(app->p_list_view, 0xe1ca, "删除..", (void *)FILE_BROWSER_MENU_REMOVE_FOLDER);
+        mui_list_view_add_item(app->p_list_view, 0xe1ca, "刪除..", (void *)FILE_BROWSER_MENU_REMOVE_FOLDER);
     }
     mui_list_view_add_item(app->p_list_view, 0xe069, "返回文件列表", (void *)FILE_BROWSER_MENU_BACK_FILE_BROWSER);
-    mui_list_view_add_item(app->p_list_view, 0xe069, "返回主菜单", (void *)FILE_BROWSER_MENU_BACK_MAIN_MENU);
+    mui_list_view_add_item(app->p_list_view, 0xe069, "返回主菜單", (void *)FILE_BROWSER_MENU_BACK_MAIN_MENU);
 
     mui_list_view_set_selected_cb(app->p_list_view, amiibo_scene_file_browser_menu_on_selected);
     mui_list_view_set_user_data(app->p_list_view, app);
